@@ -3,7 +3,7 @@ import numpy as np
 import urllib.request
 import serial
 
-ser = serial.Serial('COMx', 115200)
+ser = serial.Serial('dev/ttyUSB0', 115200)
 
 url = 'http://192.168.0.87/capture'
 

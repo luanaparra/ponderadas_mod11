@@ -1,9 +1,9 @@
 #include "esp_camera.h"
 #include <WiFi.h>
+#include <WebServer.h> 
 
-// Credenciais Wi-Fi
-const char* ssid = "Chile_5G";
-const char* password = "senha";
+const char* ssid = "Chile_5G";  // Nome da rede Wi-Fi
+const char* password = "senha";  // Senha da rede Wi-Fi
 
 // Pinos da câmera para ESP32-CAM
 #define PWDN_GPIO_NUM     32
@@ -24,7 +24,9 @@ const char* password = "senha";
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
 
-void startCameraServer();
+WebServer server(80);  // Cria um servidor web na porta 80
+
+void startCameraServer();  // Declaração da função
 
 void setup() {
   Serial.begin(115200);
@@ -58,6 +60,7 @@ void setup() {
     return;
   }
 
+  // Conectar ao Wi-Fi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
@@ -65,9 +68,29 @@ void setup() {
   }
   Serial.println("Conectado ao Wi-Fi");
 
-  startCameraServer();
+  startCameraServer();  // Chama a função para iniciar o servidor
 }
 
 void loop() {
   delay(10000);
+}
+
+// Implementação da função para iniciar o servidor da câmera
+void startCameraServer() {
+  // Rota para capturar a imagem
+  server.on("/capture", HTTP_GET, [](AsyncWebServerRequest *request){
+    camera_fb_t *fb = esp_camera_fb_get(); // Captura uma imagem da câmera
+    if (!fb) {
+      Serial.println("Falha ao capturar imagem");
+      request->send(500);
+      return;
+    }
+
+    // Envia a imagem como resposta
+    request->send_P(200, "image/jpeg", fb->buf, fb->len); 
+    esp_camera_fb_return(fb); // Libera a imagem
+  });
+
+  server.begin(); // Inicia o servidor
+  Serial.println("Servidor de câmera iniciado");
 }
